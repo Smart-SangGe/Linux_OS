@@ -107,6 +107,10 @@ if __name__ == "__main__":
     print(f"Allocated at {proc_c}")
     print()
 
-    buddy.free(proc_a, 8)
-    print(f"freed {proc_a}")
+    buddy.free(proc_b, 16)
+    print(f"freed {proc_b}")
+    print()
+
+    proc_d = buddy.allocate(8)
+    print(f"Allocated at {proc_d}")
     print()
