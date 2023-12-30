@@ -33,6 +33,7 @@ class BuddyAllocator:
                 # 确定了首地址和size, 对剩余内存进行拆分
                 self.split(block_size, address, size)
                 self.allocated_list[address] = size
+                self.show_mem()
                 return address
         raise ValueError("Can't allocate")
 
@@ -69,11 +70,25 @@ class BuddyAllocator:
             # buddy不空闲则把目前的释放
             self.free_list.setdefault(size, []).append(address)
             del self.allocated_list[address]  # 从记录中移除
+            self.show_mem()
 
     def find_buddy(self, address, size):
         # 因为二分得到的buddy在地址上只有一位的差别,
         # 因此用异或操作可以直接计算出buddy的首地址
         return address ^ size
+
+    def show_mem(self):
+        mem_visual = ["-" for _ in range(self.size)]  # 初始化全部为可用
+        # 标记已分配的内存
+        for address, size in self.allocated_list.items():
+            for i in range(address, address + size):
+                mem_visual[i] = "X"
+
+        # 将内存可视化为字符串
+        mem_str = "".join(mem_visual)
+        # 打印可视化的内存
+        print("Memory Visualization:")
+        print(mem_str)
 
 
 if __name__ == "__main__":
@@ -82,11 +97,16 @@ if __name__ == "__main__":
 
     proc_a = buddy.allocate(8)
     print(f"Allocated at {proc_a}")
+    print()
 
     proc_b = buddy.allocate(16)
     print(f"Allocated at {proc_b}")
+    print()
 
     proc_c = buddy.allocate(32)
     print(f"Allocated at {proc_c}")
+    print()
 
     buddy.free(proc_a, 8)
+    print(f"freed {proc_a}")
+    print()
