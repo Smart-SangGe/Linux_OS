@@ -4,6 +4,7 @@ class BuddyAllocator:
             raise ValueError("Size must be power of two")
         self.size = self.get_power_of_two(size)
         self.free_list = {self.size: [0]}  # 使用2的幂作为键
+        self.allocated_list = {}  # 记录分配的地址
 
     def is_power_of_two(self, n):
         if n <= 0:
@@ -28,34 +29,50 @@ class BuddyAllocator:
                 address = self.free_list[block_size].pop(0)
                 if len(self.free_list[block_size]) == 0:
                     del self.free_list[block_size]  # 移除空列表
+
+                # 确定了首地址和size, 对剩余内存进行拆分
                 self.split(block_size, address, size)
+                self.allocated_list[address] = size
                 return address
         raise ValueError("Can't allocate")
 
     def split(self, block_size, address, size):
-        # 将分配好的block分离出一个buddy
+        # 递归拆分
         while block_size > size:
             block_size //= 2
+            # 计算出buddy的首地址
             buddy_address = address + block_size
             self.free_list.setdefault(block_size, []).append(buddy_address)
 
     def free(self, address, size):
+        # 释放内存
         size = self.get_power_of_two(size)  # 调整size为2的幂
-        buddy_address = self.find_buddy(address, size)
 
         # Do double free check
-        # ...
-        
+        if address not in self.allocated_list:
+            raise ValueError("Can't double free")
+
+        buddy_address = self.find_buddy(address, size)
+
+        # 如果buddy空闲,则合并
         if size in self.free_list and buddy_address in self.free_list[size]:
             self.free_list[size].remove(buddy_address)
             if len(self.free_list[size]) == 0:
                 del self.free_list[size]  # 移除空列表
+
+            # 向左或向右合并buddy
             merged_address = min(address, buddy_address)
+
+            # 尝试递归合并
             self.free(merged_address, size * 2)
         else:
+            # buddy不空闲则把目前的释放
             self.free_list.setdefault(size, []).append(address)
+            del self.allocated_list[address]  # 从记录中移除
 
     def find_buddy(self, address, size):
+        # 因为二分得到的buddy在地址上只有一位的差别,
+        # 因此用异或操作可以直接计算出buddy的首地址
         return address ^ size
 
 
@@ -72,4 +89,4 @@ if __name__ == "__main__":
     proc_c = buddy.allocate(32)
     print(f"Allocated at {proc_c}")
 
-    buddy.free(proc_a, 100)
+    buddy.free(proc_a, 8)

@@ -1,6 +1,7 @@
 import unittest
 from main import *
 
+
 class TestBuddyAllocator(unittest.TestCase):
     def test_initialization(self):
         size = 1024
@@ -12,7 +13,11 @@ class TestBuddyAllocator(unittest.TestCase):
         addr = buddy.allocate(100)
         self.assertIsNotNone(addr)
         buddy.free(addr, 100)
-        self.assertNotIn(addr, buddy.free_list[1024])
+        self.assertIn(addr, buddy.free_list[1024])
+        addr = buddy.allocate(200)
+        self.assertIsNotNone(addr)
+        buddy.free(addr, 200)
+        self.assertIn(addr, buddy.free_list[1024])
 
     def test_invalid_initialization(self):
         with self.assertRaises(ValueError):
