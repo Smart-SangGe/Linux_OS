@@ -2,9 +2,9 @@ class BuddyAllocator:
     def __init__(self, size):
         if not self.is_power_of_two(size):
             raise ValueError("Size must be power of two")
-        self.size = size
-        self.free_list = {self.get_power_of_two(size): [0]}  # 使用2的幂作为键
-        
+        self.size = self.get_power_of_two(size)
+        self.free_list = {self.size: [0]}  # 使用2的幂作为键
+
     def is_power_of_two(self, n):
         if n <= 0:
             return False
@@ -20,8 +20,11 @@ class BuddyAllocator:
     def allocate(self, size):
         # 分配内存函数
         size = self.get_power_of_two(size)  # 调整size为2的幂
+
+        # 从小到大寻找合适的block size
         for block_size in sorted(self.free_list):
             if block_size >= size:
+                # 取出第一个符合大小的block的首地址
                 address = self.free_list[block_size].pop(0)
                 if len(self.free_list[block_size]) == 0:
                     del self.free_list[block_size]  # 移除空列表
@@ -30,6 +33,7 @@ class BuddyAllocator:
         raise ValueError("Can't allocate")
 
     def split(self, block_size, address, size):
+        # 将分配好的block分离出一个buddy
         while block_size > size:
             block_size //= 2
             buddy_address = address + block_size
@@ -38,6 +42,10 @@ class BuddyAllocator:
     def free(self, address, size):
         size = self.get_power_of_two(size)  # 调整size为2的幂
         buddy_address = self.find_buddy(address, size)
+
+        # Do double free check
+        # ...
+        
         if size in self.free_list and buddy_address in self.free_list[size]:
             self.free_list[size].remove(buddy_address)
             if len(self.free_list[size]) == 0:
